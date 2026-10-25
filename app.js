@@ -4,6 +4,10 @@
   const API = (CFG.API_URL || '').trim();
   const TOP_N = CFG.TOP_N || 10;
   const DEVICE = P.device();
+  // secret jury code from the link (?k=...), remembered on this device
+  const urlK = new URLSearchParams(location.search).get('k');
+  if (urlK) localStorage.setItem('paoty.k', urlK.trim());
+  const K = localStorage.getItem('paoty.k') || '';
   const $ = s => document.querySelector(s);
   const $$ = s => [...document.querySelectorAll(s)];
 
@@ -25,9 +29,23 @@
       return;
     }
     DATA.forEach(d => byId[d.id] = d);
+    if (API) {
+      if (!K) return showLocked();
+      if (navigator.onLine) {
+        try {
+          const r = await fetch(`${API}?action=check&k=${encodeURIComponent(K)}`);
+          const j = await r.json();
+          if (!j.ok && j.error === 'LOCKED') { localStorage.removeItem('paoty.k'); return showLocked(); }
+        } catch (e) { /* offline or blocked — continue with saved code */ }
+      }
+    }
     const saved = localStorage.getItem('paoty.juror');
     if (saved && (CFG.JURORS || []).includes(saved)) enter(saved); else showPicker();
     bindUI();
+  }
+
+  function showLocked() {
+    $('#app').classList.add('hidden'); $('#picker').classList.add('hidden'); $('#locked').classList.remove('hidden');
   }
 
   // ---------- profile picker ----------
@@ -116,9 +134,10 @@
     try {
       const res = await fetch(API, {
         method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'sync', juror, state: st, events: sent, device: DEVICE })
+        body: JSON.stringify({ action: 'sync', k: K, juror, state: st, events: sent, device: DEVICE })
       });
       const j = await res.json();
+      if (!j.ok && j.error === 'LOCKED') { localStorage.removeItem('paoty.k'); showLocked(); return; }
       if (!j.ok) throw new Error(j.error || 'Sync failed');
       const before = JSON.stringify(st);
       st = P.merge(st, j.state);
@@ -137,7 +156,7 @@
   async function loadHistory() {
     if (!API || !navigator.onLine) return;
     try {
-      const r = await fetch(`${API}?action=history&juror=${encodeURIComponent(juror)}`);
+      const r = await fetch(`${API}?action=history&k=${encodeURIComponent(K)}&juror=${encodeURIComponent(juror)}`);
       const j = await r.json();
       if (j.ok) { serverHist = j.history || []; if (view === 'hist') renderHist(); }
     } catch (e) {}
