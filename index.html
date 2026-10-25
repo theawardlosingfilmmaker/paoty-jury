@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PAOTY S2 · Jury Panel</title>
+<meta name="description" content="Portrait Artist of the Year Season 2 — jury scoring">
+<meta name="theme-color" content="#0c0f1d">
+<meta name="robots" content="noindex, nofollow">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600;700&family=Oswald:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- Who's judging? -->
+<section id="picker" class="picker hidden">
+  <img class="logo" src="logo.png" alt="Portrait Artist of the Year — Season 2">
+  <h1>Who's judging?</h1>
+  <p>Select your name to continue. Your marks follow you on every device.</p>
+  <div class="profiles" id="profiles"></div>
+  <div class="foot">Entries are shown by entry number only. Artist names and details are hidden so every work is judged on its own merit.</div>
+</section>
+
+<!-- Main app -->
+<div id="app" class="hidden">
+  <header class="topbar">
+    <a class="brand" href="#" data-go="art" aria-label="Home">
+      <img src="logo.png" alt="PAOTY Season 2">
+      <div class="brand-text"><b>Jury Panel</b>Season 2</div>
+    </a>
+    <div class="spacer"></div>
+    <nav class="tabs" id="tabs">
+      <button class="tab active" data-go="art">Artworks <span class="pill" id="pill-art">0/0</span></button>
+      <button class="tab" data-go="top">My Top 10</button>
+      <button class="tab" data-go="hist">History</button>
+    </nav>
+    <div class="spacer"></div>
+    <div class="sync" id="sync" title=""><i></i><span class="lbl">Starting…</span></div>
+    <button class="who" id="who" title="Switch juror"><span class="av"></span><span></span></button>
+  </header>
+
+  <main class="wrap">
+    <div id="local-banner" class="banner hidden">⚠ Not connected to the online sheet yet. Marks are being saved on this device only.</div>
+
+    <!-- Artworks -->
+    <section id="v-art">
+      <div class="view-head">
+        <div>
+          <h1>All Entries</h1>
+          <p>Open each artwork and give it marks out of 100.</p>
+        </div>
+        <div class="progress"><div class="bar"><i id="prog-bar" style="width:0"></i></div><b id="prog-txt">0 of 0 scored</b></div>
+      </div>
+      <div class="toolbar">
+        <div class="seg" id="filter">
+          <button class="active" data-f="all">All</button>
+          <button data-f="todo">To score</button>
+          <button data-f="done">Scored</button>
+        </div>
+        <label class="search"><span aria-hidden="true">⌕</span><input id="q" type="search" placeholder="Search no. or title" autocomplete="off"></label>
+        <select class="sel" id="sort" aria-label="Sort">
+          <option value="id">Entry number</option>
+          <option value="high">Marks: high → low</option>
+          <option value="low">Marks: low → high</option>
+        </select>
+      </div>
+      <div class="grid" id="grid"></div>
+      <div class="dl-chip" id="dl" style="margin-top:22px"></div>
+    </section>
+
+    <!-- Top 10 -->
+    <section id="v-top" class="hidden">
+      <div class="view-head">
+        <div>
+          <h1>My Top 10</h1>
+          <p>Built automatically from your marks — highest first. Change a mark and the order updates.</p>
+        </div>
+      </div>
+      <div class="top-layout">
+        <div>
+          <div class="rank-list" id="ranks"></div>
+          <div class="more-scored hidden" id="more"></div>
+        </div>
+        <aside class="side-card">
+          <h3>Send your Top 10</h3>
+          <p>The organisers see your marks live. When you're happy with your list, submit it as final. You can still make changes afterwards and submit again.</p>
+          <button class="btn" id="submit-final">Submit final Top 10</button>
+          <div id="final-note"></div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- History -->
+    <section id="v-hist" class="hidden">
+      <div class="view-head">
+        <div>
+          <h1>History</h1>
+          <p>Every change you've made, on any of your devices.</p>
+        </div>
+      </div>
+      <div class="timeline" id="timeline"></div>
+    </section>
+  </main>
+
+  <nav class="bottomnav" id="bottomnav">
+    <button class="tab active" data-go="art"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Artworks<span class="pill" id="pill-art-m">0</span></button>
+    <button class="tab" data-go="top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>Top 10</button>
+    <button class="tab" data-go="hist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>History</button>
+  </nav>
+</div>
+
+<!-- Artwork detail -->
+<section class="detail" id="detail" aria-modal="true" role="dialog">
+  <div class="d-art">
+    <img id="d-img" alt="">
+    <div class="zoom-hint">⤢ Tap the photo to view full screen &amp; zoom</div>
+  </div>
+  <div class="d-side">
+    <div class="d-head">
+      <button class="icon-btn" id="d-close" aria-label="Back to all entries">←</button>
+      <div class="d-pos" id="d-pos"></div>
+      <button class="icon-btn" id="d-prev" aria-label="Previous entry">‹</button>
+      <button class="icon-btn" id="d-next" aria-label="Next entry">›</button>
+    </div>
+    <div class="d-body">
+      <div class="d-id" id="d-id"></div>
+      <h2 class="d-title" id="d-title"></h2>
+      <div class="d-label">Artwork description</div>
+      <div class="d-desc" id="d-desc"></div>
+    </div>
+    <div class="d-score">
+      <div class="d-label">Your marks</div>
+      <div class="score-row">
+        <button class="step" id="s-minus" aria-label="Minus one">−</button>
+        <div class="score-num"><input id="s-input" type="number" min="0" max="100" inputmode="numeric" placeholder="—" aria-label="Marks out of 100"><span>/100</span></div>
+        <button class="step" id="s-plus" aria-label="Plus one">+</button>
+        <input type="range" class="slider" id="s-range" min="0" max="100" step="1" aria-label="Marks slider">
+      </div>
+      <div class="score-foot">
+        <span class="standing" id="s-standing">Not scored yet</span>
+        <span><span class="saved" id="s-saved">✓ Saved</span> <button class="link-btn" id="s-clear">Clear marks</button></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="toast" id="toast"></div>
+
+<script src="config.js"></script>
+<script src="shared.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
