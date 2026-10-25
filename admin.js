@@ -5,6 +5,7 @@
   const TOP_N = CFG.TOP_N || 10;
   const $ = s => document.querySelector(s);
   let key = localStorage.getItem('paoty.adminKey') || sessionStorage.getItem('paoty.adminKey') || '';
+  let ART = null;
   let D = null, juror = null, sortKey = 'mark', sortDir = 1, aq = '', pm = {};
 
   async function load(silent) {
@@ -14,7 +15,9 @@
       const r = await fetch(`${API}?action=admin&key=${encodeURIComponent(key)}`);
       const j = await r.json();
       if (!j.ok) { showGate(j.error || 'Could not open the dashboard'); return false; }
-      D = j; pm = {}; D.participants.forEach(p => pm[p.id] = p);
+      if (!ART) { try { ART = {}; (await (await fetch('data.json')).json()).forEach(d => ART[d.id] = d); } catch (e) { ART = null; } }
+      D = j; pm = {};
+      D.participants.forEach(p => { const a = (ART || {})[p.id] || {}; p.img = p.img || a.img || ''; p.desc = p.desc || a.desc || ''; pm[p.id] = p; });
       if (!juror || !D.jurors.includes(juror)) juror = D.jurors[0];
       $('#gate').classList.add('hidden'); $('#dash').classList.remove('hidden');
       $('#upd').textContent = 'Updated ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' });
