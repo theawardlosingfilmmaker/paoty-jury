@@ -46,6 +46,16 @@
 
   function showLocked() {
     $('#app').classList.add('hidden'); $('#picker').classList.add('hidden'); $('#locked').classList.remove('hidden');
+    $('#code-form').onsubmit = async e => {
+      e.preventDefault();
+      const code = $('#code-in').value.trim(); if (!code) return;
+      $('#code-err').textContent = 'Checking…';
+      try {
+        const j = await (await fetch(`${API}?action=check&k=${encodeURIComponent(code)}`)).json();
+        if (j.ok) { localStorage.setItem('paoty.k', code); location.replace(location.pathname + '?k=' + encodeURIComponent(code)); }
+        else $('#code-err').textContent = 'That code is not right. Please check with the organisers.';
+      } catch (err) { $('#code-err').textContent = 'No internet connection. Connect and try again.'; }
+    };
   }
 
   // ---------- profile picker ----------
@@ -70,7 +80,7 @@
     $('#who .av').textContent = initials(name); $('#who span:last-child').textContent = name;
     $('#local-banner').classList.toggle('hidden', !!API);
     renderAll();
-    sync(); loadHistory();
+    sync(true); loadHistory();
     setTimeout(saveForOffline, 1500);
   }
 
@@ -124,28 +134,33 @@
     syncState = kind;
     const el = $('#sync'); el.className = 'sync ' + kind; el.querySelector('.lbl').textContent = text; el.title = text;
   }
-  async function sync() {
+  async function sync(force) {
     if (!juror) return;
     if (!API) { setSync('off', 'Saved on this device'); return; }
     if (!navigator.onLine) { setSync('off', queue.length ? 'Offline · saved on device' : 'Offline'); return; }
     if (syncing) { syncAgain = true; return; }
     syncing = true; setSync('busy', 'Syncing…');
     const sent = queue.slice(), sentIds = new Set(sent.map(e => e.eid));
+    const push = force === true || sent.length > 0;
     try {
-      const res = await fetch(API, {
-        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'sync', k: K, juror, state: st, events: sent, device: DEVICE })
-      });
+      const res = push
+        ? await fetch(API, {
+            method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'sync', k: K, juror, state: st, events: sent, device: DEVICE })
+          })
+        : await fetch(`${API}?action=state&k=${encodeURIComponent(K)}&juror=${encodeURIComponent(juror)}`);
       const j = await res.json();
       if (!j.ok && j.error === 'LOCKED') { localStorage.removeItem('paoty.k'); showLocked(); return; }
       if (!j.ok) throw new Error(j.error || 'Sync failed');
       const before = JSON.stringify(st);
       st = P.merge(st, j.state);
-      queue = queue.filter(e => !sentIds.has(e.eid));
+      queue = queue.filter(e => (push ? !sentIds.has(e.eid) : true) && e.t > (st.resetAt || 0));
+      log = log.filter(e => e.t > (st.resetAt || 0));
+      Object.keys(pending).forEach(id => { if (!st.marks[id]) { clearTimeout(pending[id].timer); delete pending[id]; } });
       persist(); lastSync = Date.now();
       setSync('ok', 'Synced · ' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }));
       if (JSON.stringify(st) !== before) renderAll(true);
-      if (sent.length) loadHistory();
+      if (sent.length || JSON.stringify(st) !== before) loadHistory();
     } catch (e) {
       setSync('off', 'Offline · saved on device');
     } finally {

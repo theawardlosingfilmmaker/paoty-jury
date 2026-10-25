@@ -302,3 +302,9 @@ input[type=range].slider { flex: 1; accent-color: var(--accent); height: 28px; m
   .toolbar { padding: 14px 0; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+.code-form { display: flex; gap: 10px; width: min(360px, 100%); }
+.code-form input { flex: 1; min-width: 0; background: var(--panel); border: 1px solid var(--rule-2); border-radius: 999px; padding: 12px 18px; text-align: center; font: 700 18px var(--mono); letter-spacing: .3em; outline: 0; }
+.code-form input:focus { border-color: var(--accent); }
+.code-form .btn { width: auto; padding: 12px 22px; }
+.code-err { min-height: 1.4em; font: 12px var(--mono); color: var(--accent); }

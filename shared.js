@@ -14,18 +14,23 @@
   };
 
   // ---- state: newest change wins, per artwork ----
-  P.emptyState = () => ({ marks: {}, order: { list: [], t: 0 }, final: null });
+  P.emptyState = () => ({ marks: {}, order: { list: [], t: 0 }, final: null, resetAt: 0 });
+  // newest change wins; anything from before an organiser reset is dropped
   P.merge = (a, b) => {
     a = a || P.emptyState(); b = b || P.emptyState();
     const out = P.emptyState();
+    const cut = Math.max(a.resetAt || 0, b.resetAt || 0);
+    out.resetAt = cut;
+    const live = x => (x && x.t > cut ? x : null);
     const ids = new Set([...Object.keys(a.marks || {}), ...Object.keys(b.marks || {})]);
     ids.forEach(id => {
-      const x = (a.marks || {})[id], y = (b.marks || {})[id];
-      out.marks[id] = !x ? y : !y ? x : (y.t > x.t ? y : x);
+      const x = live((a.marks || {})[id]), y = live((b.marks || {})[id]);
+      const w = !x ? y : !y ? x : (y.t > x.t ? y : x);
+      if (w) out.marks[id] = w;
     });
-    const ao = a.order || { list: [], t: 0 }, bo = b.order || { list: [], t: 0 };
+    const ao = live(a.order) || { list: [], t: 0 }, bo = live(b.order) || { list: [], t: 0 };
     out.order = bo.t > ao.t ? bo : ao;
-    const af = a.final, bf = b.final;
+    const af = live(a.final), bf = live(b.final);
     out.final = !af ? (bf || null) : !bf ? af : (bf.t > af.t ? bf : af);
     return out;
   };

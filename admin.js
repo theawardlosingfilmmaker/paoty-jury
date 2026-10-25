@@ -157,6 +157,11 @@
       ...rows.map(p => [rk[p.id] || '', p.id, mark(st, p.id) ?? '', p.first, p.last, p.age, p.state, p.phone, p.email, p.title, st.marks[p.id] ? new Date(st.marks[p.id].t).toLocaleString() : ''])]));
   }
 
+  function toast(msg) {
+    const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 2600);
+  }
+
   // ---------- events ----------
   $('#gate-form').onsubmit = async e => {
     e.preventDefault(); key = $('#key').value.trim();
@@ -169,6 +174,17 @@
   $('#refresh').onclick = () => load();
   $('#logout').onclick = () => { localStorage.removeItem('paoty.adminKey'); sessionStorage.removeItem('paoty.adminKey'); key = ''; D = null; showGate(''); };
   $('#csv-top').onclick = exportTop;
+  $('#reset-juror').onclick = async () => {
+    const typed = prompt(`This erases ALL marks, the Top 10 and the change history for ${juror}, on every device. It cannot be undone.\n\nType RESET to confirm.`);
+    if ((typed || '').trim().toUpperCase() !== 'RESET') return;
+    try {
+      const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'reset', key, juror }) });
+      const j = await r.json();
+      if (!j.ok) throw new Error(j.error || 'Reset failed');
+      await load();
+      toast(`${juror} has been reset`);
+    } catch (e) { alert('Could not reset: ' + e.message); }
+  };
   $('#csv-all').onclick = exportAll;
   $('#aq').oninput = e => { aq = e.target.value; renderAll(state(), P.ranked(state())); };
   document.querySelectorAll('th[data-sort]').forEach(th => th.onclick = () => {

@@ -1,5 +1,5 @@
 // PAOTY S2 Jury — offline support
-const VERSION = 'paoty-v5';
+const VERSION = 'paoty-v6';
 const SHELL = ['./', './index.html', './admin.html', './styles.css', './shared.js', './app.js', './admin.js',
   './config.js', './data.json', './logo.png', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png'];
 const ART = 'paoty-art';

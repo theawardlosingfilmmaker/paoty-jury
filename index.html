@@ -22,7 +22,12 @@
   <img class="logo" src="logo.png" alt="Portrait Artist of the Year — Season 2">
   <div class="eyebrow">PAOTY · Season 2 · Jury</div>
   <h1>Private <em>link</em> needed.</h1>
-  <p>This page is for the PAOTY Season 2 jury. Please open the personal link shared with you by the organisers.</p>
+  <p>This page is for the PAOTY Season 2 jury. Open the link shared by the organisers, or enter your 4-digit jury code.</p>
+  <form class="code-form" id="code-form">
+    <input id="code-in" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="Jury code" aria-label="Jury code">
+    <button class="btn" type="submit">Open</button>
+  </form>
+  <div class="code-err" id="code-err"></div>
 </section>
 
 <!-- Who's judging? -->
