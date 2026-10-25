@@ -182,10 +182,12 @@
     const n = scoredCount(), total = DATA.length;
     $('#prog-bar').style.width = (total ? n / total * 100 : 0) + '%';
     $('#prog-txt').textContent = `${n} of ${total} scored`;
-    $('#pill-art').textContent = `${n}/${total}`;
+    $('#pill-art').textContent = `${n} of ${total} scored`;
     $('#pill-art-m').textContent = `${n}/${total}`;
+    updateTopPill();
   }
   function topIds() { return P.ranked(st).slice(0, TOP_N); }
+  function updateTopPill() { const el = $('#pill-top'); if (el) { const k = Math.min(TOP_N, P.ranked(st).length); el.textContent = st.final ? 'Submitted · ' + k + ' ranked' : k + ' of ' + TOP_N + ' filled'; } }
 
   function currentList() {
     const q = query.trim().toLowerCase();

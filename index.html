@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>PAOTY S2 · Jury Panel</title>
 <meta name="description" content="Portrait Artist of the Year Season 2 — jury scoring">
-<meta name="theme-color" content="#0c0f1d">
+<meta name="theme-color" content="#0a0a0a">
 <meta name="robots" content="noindex, nofollow">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600;700&family=Oswald:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -20,47 +20,48 @@
 <!-- Locked: link without the jury code -->
 <section id="locked" class="picker hidden">
   <img class="logo" src="logo.png" alt="Portrait Artist of the Year — Season 2">
-  <h1>Private jury link needed</h1>
+  <div class="eyebrow">PAOTY · Season 2 · Jury</div>
+  <h1>Private <em>link</em> needed.</h1>
   <p>This page is for the PAOTY Season 2 jury. Please open the personal link shared with you by the organisers.</p>
 </section>
 
 <!-- Who's judging? -->
 <section id="picker" class="picker hidden">
   <img class="logo" src="logo.png" alt="Portrait Artist of the Year — Season 2">
-  <h1>Who's judging?</h1>
+  <div class="eyebrow">PAOTY · Season 2 · Jury panel</div>
+  <h1>Who's <em>judging?</em></h1>
   <p>Select your name to continue. Your marks follow you on every device.</p>
   <div class="profiles" id="profiles"></div>
-  <div class="foot">Entries are shown by entry number only. Artist names and details are hidden so every work is judged on its own merit.</div>
+  <div class="foot">Entries are shown by entry number only. Artist names and details are hidden, so every work is judged on its own merit.</div>
 </section>
 
 <!-- Main app -->
 <div id="app" class="hidden">
   <header class="topbar">
-    <a class="brand" href="#" data-go="art" aria-label="Home">
-      <img src="logo.png" alt="PAOTY Season 2">
-      <div class="brand-text"><b>Jury Panel</b>Season 2</div>
-    </a>
-    <div class="spacer"></div>
-    <nav class="tabs" id="tabs">
-      <button class="tab active" data-go="art">Artworks <span class="pill" id="pill-art">0/0</span></button>
-      <button class="tab" data-go="top">My Top 10</button>
-      <button class="tab" data-go="hist">History</button>
-    </nav>
+    <a class="brand" href="#" data-go="art" aria-label="Home"><img src="logo.png" alt="PAOTY Season 2"></a>
+    <div class="eyebrow top-eyebrow">Jury panel · Season 2</div>
     <div class="spacer"></div>
     <div class="sync" id="sync" title=""><i></i><span class="lbl">Starting…</span></div>
     <button class="who" id="who" title="Switch juror"><span class="av"></span><span></span></button>
   </header>
 
+  <div class="wrap">
+    <nav class="tabs" id="tabs" role="tablist" aria-label="Sections">
+      <button class="tab active" data-go="art" role="tab"><b>01 · Score</b>Artworks<span id="pill-art">0 of 0 scored</span></button>
+      <button class="tab" data-go="top" role="tab"><b>02 · Live</b>My Top 10<span id="pill-top">Built from your marks</span></button>
+      <button class="tab" data-go="hist" role="tab"><b>03 · Log</b>History<span>Every change, every device</span></button>
+    </nav>
+  </div>
+
   <main class="wrap">
-    <div id="local-banner" class="banner hidden">⚠ Not connected to the online sheet yet. Marks are being saved on this device only.</div>
+    <div id="local-banner" class="banner hidden">Not connected to the online sheet yet. Marks are being saved on this device only.</div>
 
     <!-- Artworks -->
     <section id="v-art">
-      <div class="view-head">
-        <div>
-          <h1>All Entries</h1>
-          <p>Open each artwork and give it marks out of 100.</p>
-        </div>
+      <div class="day">
+        <div class="eyebrow">Blind judging · Marks out of 100</div>
+        <h1>All <em>entries.</em></h1>
+        <p class="sub">Open each artwork, read the artist's note and give it marks out of 100. Every mark saves instantly and builds your Top 10.</p>
         <div class="progress"><div class="bar"><i id="prog-bar" style="width:0"></i></div><b id="prog-txt">0 of 0 scored</b></div>
       </div>
       <div class="toolbar">
@@ -77,16 +78,15 @@
         </select>
       </div>
       <div class="grid" id="grid"></div>
-      <div class="dl-chip" id="dl" style="margin-top:22px"></div>
+      <div class="dl-chip" id="dl"></div>
     </section>
 
     <!-- Top 10 -->
     <section id="v-top" class="hidden">
-      <div class="view-head">
-        <div>
-          <h1>My Top 10</h1>
-          <p>Built automatically from your marks — highest first. Change a mark and the order updates.</p>
-        </div>
+      <div class="day">
+        <div class="eyebrow">Live · highest marks first</div>
+        <h1>My <em>Top 10.</em></h1>
+        <p class="sub">Built automatically from your marks. Change a mark and the order updates. Same marks? Use the arrows to set who goes first.</p>
       </div>
       <div class="top-layout">
         <div>
@@ -94,7 +94,8 @@
           <div class="more-scored hidden" id="more"></div>
         </div>
         <aside class="side-card">
-          <h3>Send your Top 10</h3>
+          <div class="eyebrow">Send to organisers</div>
+          <h3>Submit your <em>Top 10</em></h3>
           <p>The organisers see your marks live. When you're happy with your list, submit it as final. You can still make changes afterwards and submit again.</p>
           <button class="btn" id="submit-final">Submit final Top 10</button>
           <div id="final-note"></div>
@@ -104,11 +105,10 @@
 
     <!-- History -->
     <section id="v-hist" class="hidden">
-      <div class="view-head">
-        <div>
-          <h1>History</h1>
-          <p>Every change you've made, on any of your devices.</p>
-        </div>
+      <div class="day">
+        <div class="eyebrow">Synced across your devices</div>
+        <h1>Change <em>log.</em></h1>
+        <p class="sub">Every mark and ranking change you've made, newest first.</p>
       </div>
       <div class="timeline" id="timeline"></div>
     </section>
@@ -125,7 +125,7 @@
 <section class="detail" id="detail" aria-modal="true" role="dialog">
   <div class="d-art">
     <img id="d-img" alt="">
-    <div class="zoom-hint">⤢ Tap the photo to view full screen &amp; zoom</div>
+    <div class="zoom-hint">⤢ Tap to view full screen · zoom</div>
   </div>
   <div class="d-side">
     <div class="d-head">
@@ -137,8 +137,7 @@
     <div class="d-body">
       <div class="d-id" id="d-id"></div>
       <h2 class="d-title" id="d-title"></h2>
-      <div class="d-label">Artwork description</div>
-      <div class="d-desc" id="d-desc"></div>
+      <div class="d-script"><div class="d-label">Artist's note</div><div class="d-desc" id="d-desc"></div></div>
     </div>
     <div class="d-score">
       <div class="d-label">Your marks</div>
