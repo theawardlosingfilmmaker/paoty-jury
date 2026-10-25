@@ -158,7 +158,15 @@
     try {
       const r = await fetch(`${API}?action=history&k=${encodeURIComponent(K)}&juror=${encodeURIComponent(juror)}`);
       const j = await r.json();
-      if (j.ok) { serverHist = j.history || []; if (view === 'hist') renderHist(); }
+      if (j.ok) {
+        serverHist = j.history || [];
+        // keep the device's copy in step with the sheet: drop synced entries the sheet no longer has
+        const onServer = new Set(serverHist.map(e => e.eid)), waiting = new Set(queue.map(e => e.eid));
+        const before = log.length;
+        log = log.filter(e => onServer.has(e.eid) || waiting.has(e.eid));
+        if (log.length !== before) persist();
+        if (view === 'hist') renderHist();
+      }
     } catch (e) {}
   }
   setInterval(() => { if (juror && document.visibilityState === 'visible') sync(); }, 25000);
