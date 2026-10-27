@@ -4,8 +4,9 @@
 
   // ---- images (Wix serves resized copies; fall back to the original) ----
   P.fileName = url => url.split('/').pop();
-  P.thumb = url => `${url}/v1/fit/w_640,h_640,q_80/${P.fileName(url)}`;
-  P.large = url => `${url}/v1/fit/w_2000,h_2000,q_88/${P.fileName(url)}`;
+  const isWix = url => /static\.wixstatic\.com/.test(url);
+  P.thumb = url => isWix(url) ? `${url}/v1/fit/w_640,h_640,q_80/${P.fileName(url)}` : url;
+  P.large = url => isWix(url) ? `${url}/v1/fit/w_2000,h_2000,q_88/${P.fileName(url)}` : url;
   P.imgFallback = (img, original) => {
     img.addEventListener('error', function onErr() {
       img.removeEventListener('error', onErr);
