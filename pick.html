@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>PAOTY S2 · Select entries</title>
+<style>
+  body { margin: 0; padding: 12px; background: #0a0a0a; color: #f2f2f0; font: 15px system-ui, sans-serif; }
+  .bar { position: sticky; top: 0; background: #0a0a0a; padding: 8px 0; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; z-index: 2; }
+  button { font: inherit; padding: 8px 14px; border-radius: 6px; border: 1px solid #444; background: #1c1c1c; color: inherit; cursor: pointer; }
+  button.main { background: #ff3b30; border-color: #ff3b30; color: #fff; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  label { display: block; background: #151515; border: 2px solid #262626; border-radius: 6px; overflow: hidden; cursor: pointer; }
+  label.on { border-color: #ff3b30; }
+  label img { width: 100%; aspect-ratio: 4/5; object-fit: cover; display: block; background: #000; }
+  label div { padding: 6px; font-size: 13px; }
+  label b { color: #ff3b30; }
+  input[type=checkbox] { transform: scale(1.3); margin-right: 6px; }
+  #out { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.85); z-index: 5; padding: 20px; }
+  #out .box { max-width: 500px; margin: 40px auto; background: #151515; border-radius: 8px; padding: 16px; }
+  textarea { width: 100%; height: 260px; box-sizing: border-box; background: #0a0a0a; color: #f2f2f0; border: 1px solid #444; font: 15px monospace; padding: 8px; }
+</style>
+</head>
+<body>
+<div class="bar">
+  <button class="main" id="show">Show selected codes (<span id="n">0</span>)</button>
+  <button id="clear">Clear all</button>
+</div>
+<div class="grid" id="grid">Loading…</div>
+
+<div id="out"><div class="box">
+  <p>Selected entry codes:</p>
+  <textarea id="codes" readonly></textarea>
+  <p><button class="main" id="copy">Copy</button> <button id="close">Close</button></p>
+</div></div>
+
+<script>
+let sel = new Set();
+try { sel = new Set(JSON.parse(localStorage.getItem('paoty.pick') || '[]')); } catch (e) {}
+const save = () => { try { localStorage.setItem('paoty.pick', JSON.stringify([...sel])); } catch (e) {} document.getElementById('n').textContent = sel.size; };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const thumb = u => u + '/v1/fit/w_400,h_400,q_75/' + u.split('/').pop();
+
+fetch('data.json').then(r => r.json()).then(data => {
+  data.sort((a, b) => a.id < b.id ? -1 : 1);
+  document.getElementById('grid').innerHTML = data.map(d => `
+    <label class="${sel.has(d.id) ? 'on' : ''}">
+      <img loading="lazy" src="${thumb(d.img)}" onerror="this.onerror=null;this.src='${d.img}'" alt="">
+      <div><input type="checkbox" value="${d.id}" ${sel.has(d.id) ? 'checked' : ''}><b>${d.id}</b><br>${esc(d.title)}</div>
+    </label>`).join('');
+  document.querySelectorAll('input[type=checkbox]').forEach(cb => cb.onchange = () => {
+    cb.checked ? sel.add(cb.value) : sel.delete(cb.value);
+    cb.closest('label').classList.toggle('on', cb.checked);
+    save();
+  });
+  save();
+});
+
+document.getElementById('show').onclick = () => {
+  document.getElementById('codes').value = [...sel].sort().join('\n');
+  document.getElementById('out').style.display = 'block';
+};
+document.getElementById('close').onclick = () => document.getElementById('out').style.display = 'none';
+document.getElementById('copy').onclick = () => {
+  const t = document.getElementById('codes'); t.select();
+  (navigator.clipboard ? navigator.clipboard.writeText(t.value) : Promise.reject()).catch(() => document.execCommand('copy'));
+  document.getElementById('copy').textContent = 'Copied';
+  setTimeout(() => document.getElementById('copy').textContent = 'Copy', 1500);
+};
+document.getElementById('clear').onclick = () => {
+  if (!confirm('Clear all selections?')) return;
+  sel.clear(); save();
+  document.querySelectorAll('input[type=checkbox]').forEach(cb => { cb.checked = false; cb.closest('label').classList.remove('on'); });
+};
+</script>
+</body>
+</html>
