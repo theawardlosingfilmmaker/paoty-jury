@@ -97,6 +97,7 @@
         <h2>More <em>works</em> by this artist${more.length ? ` <span class="eyebrow" style="vertical-align:middle">${more.length}</span>` : ''}</h2>
         ${more.length ? `<div class="wgrid">${more.map((u, k) => `<button data-z="${k + 1}" aria-label="Open work ${k + 1}"><img loading="lazy" src="${u}" alt=""><span>${String(k + 1).padStart(2, '0')}</span></button>`).join('')}</div>`
           : `<div class="soon">More works by this artist are being collected<br>and will appear here.</div>`}
+        ${d.moreNote ? `<div class="d-script" style="margin-top:18px"><div class="d-label">Artist's notes on these works</div><div class="d-desc" style="white-space:pre-line">${P.esc(d.moreNote)}</div></div>` : ''}
       </section>
       <div class="nav2">
         <a class="btn ghost small" href="#${encodeURIComponent(prev.id)}">‹ ${P.esc(prev.id)}</a>
