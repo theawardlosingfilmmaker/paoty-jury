@@ -56,6 +56,44 @@
   .who-pick button:hover { border-color: var(--accent); }
   .jname { margin-left: auto; font: 700 12px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
   .jname a { color: var(--muted); }
+  .toprank { font: 800 18px var(--sans); color: var(--muted); } .toprank b { color: var(--fg); }
+  body.has-bar #view { padding-bottom: 150px; }
+  .markbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; background: rgba(14,10,10,.97); border-top: 2px solid var(--accent); backdrop-filter: blur(10px);
+    padding: 10px 12px; padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+  .mb-in { max-width: 760px; margin: 0 auto; }
+  .mb-top { display: flex; justify-content: space-between; gap: 10px; font: 700 13px var(--mono); letter-spacing: .04em; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; }
+  .mb-top .savestate { margin: 0; text-transform: none; font-size: 14px; text-align: right; }
+  .mb-row { display: flex; align-items: center; gap: 10px; }
+  .mb-row input { width: 112px; flex: none; font: 800 36px/1 var(--sans); text-align: center; padding: 8px 4px; border-radius: 12px; border: 2px solid var(--rule-2); background: #000; color: var(--fg); -moz-appearance: textfield; }
+  .mb-row input::-webkit-outer-spin-button, .mb-row input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .mb-row input:focus { border-color: var(--accent); outline: none; }
+  .mb-row .of { font: 800 22px var(--sans); color: var(--muted); }
+  .mb-row .bigbtn { flex: 1; min-height: 58px; font-size: 20px; }
+  .mb-nav { flex: none; width: 52px; height: 58px; display: grid; place-items: center; border-radius: 12px; border: 2px solid var(--rule-2); color: var(--fg); text-decoration: none; font: 700 34px/1 var(--sans); }
+  .mb-nav.next { border-color: var(--fg); }
+  /* tablets (iPad portrait) and phones: one column */
+  @media (max-width: 1000px) {
+    .ent-top { grid-template-columns: 1fr; gap: 16px; }
+    .ent-top .main-img img { max-height: 62vh; }
+    .wgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  }
+  @media (max-width: 600px) {
+    .sl-head { padding: 10px 14px; gap: 10px; }
+    .sl-head img { height: 34px; }
+    .sl-head .eyebrow { display: none; }
+    .jname { font-size: 11px; letter-spacing: .06em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .wgrid, .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .mb-row { gap: 7px; } .mb-row input { width: 92px; font-size: 32px; } .mb-row .of { font-size: 18px; }
+    .mb-nav { width: 44px; } .mb-top { font-size: 11.5px; }
+    .tag { font-size: 10px; letter-spacing: .1em; }
+    /* image viewer on phones: big next/back buttons at the bottom, no overlapping hint */
+    .v-hint { display: none !important; }
+    .v-nav { display: block !important; top: auto; bottom: max(16px, env(safe-area-inset-bottom)); transform: none; width: 64px; height: 56px; }
+    .v-count { left: 50%; right: auto; transform: translateX(-50%); bottom: max(32px, calc(env(safe-area-inset-bottom) + 16px)); font-size: 15px; }
+    .v-tools .v-btn[data-a=out], .v-tools .v-zoom { display: none; }
+    .v-cap { font-size: 14px; }
+  }
   @media (max-width: 760px) {
     .markrow input { width: 110px; font-size: 38px; }
     .rank .r, .rank .m { font-size: 22px; }
@@ -112,7 +150,7 @@
   let dirty = false, sending = false, status = 'ok';
   function setStatus(s) { status = s; const el = $('#savestate'); if (!el) return;
     el.className = 'savestate ' + (s === 'ok' ? 'ok' : s === 'bad' ? 'bad' : '');
-    el.textContent = s === 'ok' ? '✓ Saved' : s === 'bad' ? 'Not saved yet — check internet. It will save automatically.' : 'Saving…'; }
+    el.textContent = s === 'ok' ? '✓ Saved' : s === 'bad' ? 'Not saved — no internet. Will retry.' : 'Saving…'; }
   async function push() {
     if (sending) { dirty = true; return; }
     sending = true; dirty = false; setStatus('busy');
@@ -208,16 +246,7 @@
         <div style="display:grid;gap:14px;align-content:start">
           <div class="d-id">Entry ${P.esc(d.id)} · ${i + 1} of ${DATA.length}</div>
           <h2 class="d-title">${P.esc(d.title)}</h2>
-          <div class="markbox">
-            <div class="lbl">Your marks for this artist</div>
-            <div class="markrow">
-              <input id="mark" type="number" inputmode="numeric" min="0" max="100" step="1" placeholder="–" value="${m === null ? '' : m}" aria-label="Marks out of 100">
-              <span class="of">/ 100</span>
-              <button class="bigbtn" id="save">Save</button>
-            </div>
-            <div class="savestate ${m === null ? '' : 'ok'}" id="savestate">${m === null ? 'Type a number from 0 to 100, then press Save.' : '✓ Saved'}</div>
-            <div class="hint">Look at all the works below before deciding. You can change marks any time.</div>
-          </div>
+          <div class="toprank">${m === null ? 'Not marked yet' : 'Your marks: <b>' + m + ' / 100</b>'}</div>
           <div class="d-script"><div class="d-label">Artist's note</div><div class="d-desc">${P.esc(d.desc) || 'No description was provided.'}</div></div>
         </div>
       </div>
@@ -227,20 +256,30 @@
           : `<div class="soon">More works by this artist are being collected<br>and will appear here.</div>`}
         ${d.moreNote ? `<div class="d-script" style="margin-top:18px"><div class="d-label">Artist's notes on these works</div><div class="d-desc" style="white-space:pre-line">${P.esc(d.moreNote)}</div></div>` : ''}
       </section>
-      <div class="nav2">
-        <a class="bigbtn ghost" href="#${encodeURIComponent(prev.id)}">‹ Previous</a>
-        <a class="bigbtn" href="#${encodeURIComponent(next.id)}">Next artist ›</a>
+      <div class="markbar" role="region" aria-label="Your marks">
+        <div class="mb-in">
+          <div class="mb-top"><span>Your marks</span><span class="savestate ${m === null ? '' : 'ok'}" id="savestate">${m === null ? 'Type 0–100, press Save' : '✓ Saved'}</span></div>
+          <div class="mb-row">
+            <a class="mb-nav" href="#${encodeURIComponent(prev.id)}" aria-label="Previous artist">‹</a>
+            <input id="mark" type="number" inputmode="numeric" pattern="[0-9]*" min="0" max="100" step="1" placeholder="–" value="${m === null ? '' : m}" aria-label="Marks out of 100">
+            <span class="of">/100</span>
+            <button class="bigbtn" id="save">Save</button>
+            <a class="mb-nav next" href="#${encodeURIComponent(next.id)}" aria-label="Next artist">›</a>
+          </div>
+        </div>
       </div>`;
     view.querySelectorAll('img[data-orig]').forEach(im => P.imgFallback(im, im.dataset.orig));
-    const list = imgs.map((u, k) => ({ img: u, alt: d.title, caption: `<b>${P.esc(d.id)}</b>${k ? 'More work ' + String(k).padStart(2, '0') : P.esc(d.title) + ' · submitted'}` }));
+    const list = imgs.map((u, k) => ({ img: u, alt: d.title, caption: `<b>${P.esc(d.id)}</b>${k ? 'Work ' + k + ' of ' + (imgs.length - 1) : 'Submitted'}` }));
     view.querySelectorAll('[data-z]').forEach(el => el.onclick = () => P.viewer.open(list, Number(el.dataset.z)));
+    document.body.classList.add('has-bar');
     const inp = $('#mark');
     const save = () => {
       const raw = inp.value.trim();
       if (raw === '') { if (markOf(d.id) !== null) { setMark(d.id, null); } return; }
       const v = Math.round(Number(raw));
-      if (!isFinite(v) || v < 0 || v > 100) { const el = $('#savestate'); el.className = 'savestate bad'; el.textContent = 'Please type a number from 0 to 100.'; inp.focus(); return; }
+      if (!isFinite(v) || v < 0 || v > 100) { const el = $('#savestate'); el.className = 'savestate bad'; el.textContent = 'Use a number 0 to 100'; inp.focus(); return; }
       inp.value = v; if (markOf(d.id) !== v) setMark(d.id, v); else setStatus('ok');
+      const tr = $('.toprank'); if (tr) tr.innerHTML = 'Your marks: <b>' + v + ' / 100</b>';
     };
     $('#save').onclick = save;
     inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); save(); inp.blur(); } });
@@ -249,6 +288,7 @@
   }
 
   function route() {
+    document.body.classList.remove('has-bar');
     if (!KEY) return askCode();
     if (!juror) return pickJuror();
     $('#jname').innerHTML = `${P.esc(juror)} · <a href="#" id="chg">change</a>`;
