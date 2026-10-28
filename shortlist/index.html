@@ -31,7 +31,34 @@
   .wgrid span { position: absolute; left: 8px; bottom: 8px; font: 700 10.5px var(--mono); letter-spacing: .12em; padding: 4px 8px; border-radius: 999px; background: rgba(10,10,10,.85); }
   .soon { padding: 34px 20px; text-align: center; border: 1px dashed var(--rule-2); border-radius: 14px; color: var(--muted); font: 700 12px/1.7 var(--mono); letter-spacing: .1em; text-transform: uppercase; }
   .nav2 { display: flex; justify-content: space-between; gap: 10px; margin-top: 30px; border-top: 1px solid var(--rule); padding-top: 18px; }
+  .markbox { border: 2px solid var(--accent); border-radius: 16px; padding: 18px; background: var(--accent-bg); }
+  .markbox .lbl { font: 800 15px var(--sans); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 10px; }
+  .markrow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .markrow input { width: 130px; font: 800 44px/1 var(--sans); text-align: center; padding: 10px 6px; border-radius: 12px; border: 2px solid var(--rule-2); background: #000; color: var(--fg); }
+  .markrow input:focus { border-color: var(--accent); outline: none; }
+  .markrow .of { font: 800 26px var(--sans); color: var(--muted); }
+  .bigbtn { font: 800 18px var(--sans); padding: 16px 22px; border-radius: 12px; border: 0; background: var(--accent); color: #fff; cursor: pointer; text-decoration: none; display: inline-block; }
+  .bigbtn.ghost { background: transparent; border: 2px solid var(--rule-2); color: var(--fg); }
+  .savestate { margin-top: 10px; font: 700 14px var(--mono); letter-spacing: .04em; color: var(--muted); }
+  .savestate.ok { color: #4cd964; } .savestate.bad { color: var(--accent); }
+  .hint { font-size: 14px; color: var(--muted); margin-top: 8px; }
+  .mk { position: absolute; left: 10px; top: 10px; font: 800 15px var(--sans); padding: 5px 10px; border-radius: 999px; background: var(--accent); color: #fff; }
+  .mk.no { background: rgba(10,10,10,.85); color: var(--muted); font: 700 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; border: 1px solid var(--rule-2); }
+  .toolbar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin: 18px 0 22px; }
+  .rank { width: 100%; border-collapse: collapse; margin-top: 18px; }
+  .rank td { padding: 10px 8px; border-bottom: 1px solid var(--rule); vertical-align: middle; font-size: 17px; }
+  .rank tr { cursor: pointer; } .rank tr:hover td { background: #121212; }
+  .rank .r { font: 800 26px var(--sans); color: var(--accent); width: 54px; text-align: center; }
+  .rank td:nth-child(2) { width: 64px; } .rank img { width: 64px; min-width: 64px; height: 80px; object-fit: cover; border-radius: 8px; display: block; }
+  .rank .m { font: 800 26px var(--sans); text-align: right; white-space: nowrap; }
+  .who-pick { display: grid; gap: 14px; max-width: 460px; margin: 30px 0; }
+  .who-pick button { font: 800 22px var(--sans); padding: 22px; border-radius: 14px; border: 2px solid var(--rule-2); background: #111; color: var(--fg); cursor: pointer; text-align: left; }
+  .who-pick button:hover { border-color: var(--accent); }
+  .jname { margin-left: auto; font: 700 12px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .jname a { color: var(--muted); }
   @media (max-width: 760px) {
+    .markrow input { width: 110px; font-size: 38px; }
+    .rank .r, .rank .m { font-size: 22px; }
     .ent-top { grid-template-columns: 1fr; gap: 16px; }
     .wgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
     .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
@@ -43,42 +70,133 @@
 <header class="sl-head">
   <a href="#" aria-label="All shortlisted entries"><img src="../logo.png" alt="PAOTY Season 2"></a>
   <div class="eyebrow">Shortlist · Season 2</div>
+  <div class="jname" id="jname"></div>
 </header>
 
 <main class="wrap" id="view"></main>
 <div class="toast" id="toast"></div>
 
+<script src="../config.js"></script>
 <script src="../shared.js"></script>
 <script>
 (function () {
   const P = window.PAOTY, $ = s => document.querySelector(s), view = $('#view');
+  const API = window.PAOTY_CONFIG.API_URL;
+  const JURORS = { pramod: 'Pramod Kurlekar', salony: 'Salony Garg' };
   let DATA = [];
   const allImgs = d => [d.img, ...(d.more || [])];
 
+  // ---------- who is marking ----------
+  const ls = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+  const qp = new URLSearchParams(location.search);
+  if (qp.get('j') && JURORS[qp.get('j').toLowerCase()]) ls.set('paoty.sl.juror', JURORS[qp.get('j').toLowerCase()]);
+  let juror = ls.get('paoty.sl.juror');
+  if (qp.get('k')) ls.set('paoty.sl.k', qp.get('k'));
+  let KEY = ls.get('paoty.sl.k') || '';
+  if (qp.get('k') || qp.get('j')) history.replaceState(null, '', location.pathname + location.hash);
+
+  // ---------- marks (saved on this device + Google Sheet) ----------
+  let st = { marks: {}, resetAt: 0 };
+  const lkey = () => 'paoty.sl.state.' + juror;
+  function loadLocal() { try { st = Object.assign({ marks: {}, resetAt: 0 }, JSON.parse(ls.get(lkey()) || '{}')); } catch (e) { st = { marks: {}, resetAt: 0 }; } }
+  function saveLocal() { ls.set(lkey(), JSON.stringify(st)); }
+  function merge(server) {
+    if (!server) return;
+    const cut = Math.max(st.resetAt || 0, server.resetAt || 0), out = {};
+    const ids = new Set([...Object.keys(st.marks || {}), ...Object.keys(server.marks || {})]);
+    ids.forEach(id => { const a = (st.marks || {})[id], b = (server.marks || {})[id];
+      const w = !a ? b : !b ? a : (b.t > a.t ? b : a); if (w && w.t > cut) out[id] = w; });
+    st = { marks: out, resetAt: cut }; saveLocal();
+  }
+  const markOf = id => { const m = st.marks[id]; return m && m.v !== null && m.v !== undefined ? m.v : null; };
+  let dirty = false, sending = false, status = 'ok';
+  function setStatus(s) { status = s; const el = $('#savestate'); if (!el) return;
+    el.className = 'savestate ' + (s === 'ok' ? 'ok' : s === 'bad' ? 'bad' : '');
+    el.textContent = s === 'ok' ? '✓ Saved' : s === 'bad' ? 'Not saved yet — check internet. It will save automatically.' : 'Saving…'; }
+  async function push() {
+    if (sending) { dirty = true; return; }
+    sending = true; dirty = false; setStatus('busy');
+    try {
+      const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'r2sync', k: KEY, juror, state: st }) }).then(r => r.json());
+      if (!r.ok) throw new Error(r.error); merge(r.state); setStatus('ok');
+    } catch (e) { dirty = true; setStatus('bad'); }
+    sending = false;
+    if (dirty) setTimeout(push, status === 'bad' ? 8000 : 50);
+  }
+  function setMark(id, v) {
+    st.marks[id] = { v, t: Date.now() }; saveLocal(); push();
+  }
+
+  // ---------- screens ----------
+  function askCode() {
+    $('#jname').innerHTML = '';
+    view.innerHTML = `<div class="day"><div class="eyebrow">Shortlist · Season 2</div><h1>Enter the <em>jury code.</em></h1>
+      <p class="sub">Type the 4-digit code you were sent, then press Open.</p></div>
+      <div class="markrow" style="margin:24px 0"><input id="code" type="number" inputmode="numeric" placeholder="----" style="width:200px">
+      <button class="bigbtn" id="go">Open</button></div><div class="savestate bad" id="cerr"></div>`;
+    const go = async () => {
+      const k = $('#code').value.trim();
+      const r = await fetch(`${API}?action=check&k=${encodeURIComponent(k)}`).then(r => r.json()).catch(() => ({ ok: false }));
+      if (r.ok) { KEY = k; ls.set('paoty.sl.k', k); juror ? start() : pickJuror(); } else $('#cerr').textContent = 'That code did not work. Please check and try again.';
+    };
+    $('#go').onclick = go; $('#code').addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+  }
+
+  function pickJuror() {
+    $('#jname').innerHTML = '';
+    view.innerHTML = `<div class="day"><div class="eyebrow">Shortlist · Season 2</div><h1>Who is <em>marking?</em></h1>
+      <p class="sub">Tap your name. You only need to do this once on this phone or computer.</p></div>
+      <div class="who-pick">${Object.values(JURORS).map(n => `<button data-n="${P.esc(n)}">${P.esc(n)}</button>`).join('')}</div>`;
+    view.querySelectorAll('[data-n]').forEach(b => b.onclick = () => { juror = b.dataset.n; ls.set('paoty.sl.juror', juror); start(); });
+  }
+
   function home() {
-    const total = DATA.reduce((n, d) => n + (d.more || []).length, 0);
+    const done = DATA.filter(d => markOf(d.id) !== null).length;
     view.innerHTML = `
       <div class="day">
-        <div class="eyebrow">Shortlisted · ${DATA.length} entries</div>
+        <div class="eyebrow">Shortlisted · ${DATA.length} artists</div>
         <h1>The <em>shortlist.</em></h1>
-        <p class="sub">Open an entry to see the artwork that was submitted, along with more works by the same artist. Artist names and details stay hidden.</p>
-        <div class="progress"><b>${total ? total + ' more works added' : 'More works are being collected'}</b></div>
+        <p class="sub">Open each artist, look at all their works, and give <b>marks out of 100</b>. Your ranking is made automatically from your marks. Names stay hidden.</p>
       </div>
-      <div class="grid">${DATA.map(d => {
-        const n = (d.more || []).length;
+      <div class="toolbar">
+        <a class="bigbtn" href="#ranking">See my ranking →</a>
+        <span style="font:800 18px var(--sans)">Marked ${done} of ${DATA.length}</span>
+      </div>
+      <div class="grid">${DATA.map(d => { const m = markOf(d.id);
         return `<a class="card" href="#${encodeURIComponent(d.id)}" style="text-decoration:none;color:inherit">
           <div class="ph"><img loading="lazy" src="${P.thumb(d.img)}" data-orig="${d.img}" alt=""></div>
-          <span class="count ${n ? 'has' : ''}">${n ? '+' + n + ' works' : 'More soon'}</span>
+          <span class="mk ${m === null ? 'no' : ''}">${m === null ? 'Not marked' : m + ' / 100'}</span>
           <div class="meta"><span class="id">ENTRY ${P.esc(d.id)}</span><span class="ttl">${P.esc(d.title)}</span></div>
-        </a>`;
-      }).join('')}</div>`;
+        </a>`; }).join('')}</div>`;
     view.querySelectorAll('img[data-orig]').forEach(i => P.imgFallback(i, i.dataset.orig));
+    window.scrollTo({ top: 0 });
+  }
+
+  function ranking() {
+    const marked = DATA.filter(d => markOf(d.id) !== null).sort((a, b) => markOf(b.id) - markOf(a.id) || (a.id < b.id ? -1 : 1));
+    const un = DATA.filter(d => markOf(d.id) === null);
+    let rank = 0, prev = null;
+    const rows = marked.map((d, i) => { const m = markOf(d.id); if (m !== prev) { rank = i + 1; prev = m; }
+      return `<tr data-id="${P.esc(d.id)}"><td class="r">${rank}</td><td><img src="${P.thumb(d.img)}" alt=""></td>
+        <td><b>Entry ${P.esc(d.id)}</b><br><span style="color:var(--muted)">${P.esc(d.title)}</span></td><td class="m">${m}</td></tr>`; }).join('');
+    view.innerHTML = `
+      <a class="bigbtn ghost back" href="#">← Back to all artists</a>
+      <div class="day"><div class="eyebrow">${P.esc(juror)}</div><h1>My <em>ranking.</em></h1>
+        <p class="sub">Highest marks at the top. It updates by itself when you change marks. Tap a row to open that artist.</p></div>
+      ${marked.length ? `<table class="rank">${rows}</table>` : `<div class="soon">You have not given marks yet.</div>`}
+      ${un.length ? `<h2 style="margin:30px 0 8px;font:800 22px var(--sans)">Not marked yet (${un.length})</h2>
+        <table class="rank">${un.map(d => `<tr data-id="${P.esc(d.id)}"><td class="r">–</td><td><img src="${P.thumb(d.img)}" alt=""></td>
+        <td><b>Entry ${P.esc(d.id)}</b><br><span style="color:var(--muted)">${P.esc(d.title)}</span></td><td class="m" style="color:var(--muted);font-size:15px">Tap to mark</td></tr>`).join('')}</table>` : ''}`;
+    view.querySelectorAll('tr[data-id]').forEach(tr => tr.onclick = () => { location.hash = encodeURIComponent(tr.dataset.id); });
+    view.querySelectorAll('.rank img').forEach((im, i) => P.imgFallback(im, im.src));
+    window.scrollTo({ top: 0 });
   }
 
   function entry(id) {
     const i = DATA.findIndex(d => d.id === id);
     if (i < 0) return home();
-    const d = DATA[i], more = d.more || [], imgs = allImgs(d);
+    const d = DATA[i], more = d.more || [], imgs = allImgs(d), m = markOf(d.id);
     const prev = DATA[(i - 1 + DATA.length) % DATA.length], next = DATA[(i + 1) % DATA.length];
     view.innerHTML = `
       <a class="btn ghost small back" href="#">← All shortlisted</a>
@@ -90,6 +208,16 @@
         <div style="display:grid;gap:14px;align-content:start">
           <div class="d-id">Entry ${P.esc(d.id)} · ${i + 1} of ${DATA.length}</div>
           <h2 class="d-title">${P.esc(d.title)}</h2>
+          <div class="markbox">
+            <div class="lbl">Your marks for this artist</div>
+            <div class="markrow">
+              <input id="mark" type="number" inputmode="numeric" min="0" max="100" step="1" placeholder="–" value="${m === null ? '' : m}" aria-label="Marks out of 100">
+              <span class="of">/ 100</span>
+              <button class="bigbtn" id="save">Save</button>
+            </div>
+            <div class="savestate ${m === null ? '' : 'ok'}" id="savestate">${m === null ? 'Type a number from 0 to 100, then press Save.' : '✓ Saved'}</div>
+            <div class="hint">Look at all the works below before deciding. You can change marks any time.</div>
+          </div>
           <div class="d-script"><div class="d-label">Artist's note</div><div class="d-desc">${P.esc(d.desc) || 'No description was provided.'}</div></div>
         </div>
       </div>
@@ -100,23 +228,50 @@
         ${d.moreNote ? `<div class="d-script" style="margin-top:18px"><div class="d-label">Artist's notes on these works</div><div class="d-desc" style="white-space:pre-line">${P.esc(d.moreNote)}</div></div>` : ''}
       </section>
       <div class="nav2">
-        <a class="btn ghost small" href="#${encodeURIComponent(prev.id)}">‹ ${P.esc(prev.id)}</a>
-        <a class="btn ghost small" href="#${encodeURIComponent(next.id)}">${P.esc(next.id)} ›</a>
+        <a class="bigbtn ghost" href="#${encodeURIComponent(prev.id)}">‹ Previous</a>
+        <a class="bigbtn" href="#${encodeURIComponent(next.id)}">Next artist ›</a>
       </div>`;
     view.querySelectorAll('img[data-orig]').forEach(im => P.imgFallback(im, im.dataset.orig));
     const list = imgs.map((u, k) => ({ img: u, alt: d.title, caption: `<b>${P.esc(d.id)}</b>${k ? 'More work ' + String(k).padStart(2, '0') : P.esc(d.title) + ' · submitted'}` }));
     view.querySelectorAll('[data-z]').forEach(el => el.onclick = () => P.viewer.open(list, Number(el.dataset.z)));
+    const inp = $('#mark');
+    const save = () => {
+      const raw = inp.value.trim();
+      if (raw === '') { if (markOf(d.id) !== null) { setMark(d.id, null); } return; }
+      const v = Math.round(Number(raw));
+      if (!isFinite(v) || v < 0 || v > 100) { const el = $('#savestate'); el.className = 'savestate bad'; el.textContent = 'Please type a number from 0 to 100.'; inp.focus(); return; }
+      inp.value = v; if (markOf(d.id) !== v) setMark(d.id, v); else setStatus('ok');
+    };
+    $('#save').onclick = save;
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); save(); inp.blur(); } });
+    inp.addEventListener('change', save);
     window.scrollTo({ top: 0 });
   }
 
   function route() {
-    const id = decodeURIComponent(location.hash.slice(1));
-    id ? entry(id) : home();
+    if (!KEY) return askCode();
+    if (!juror) return pickJuror();
+    $('#jname').innerHTML = `${P.esc(juror)} · <a href="#" id="chg">change</a>`;
+    $('#chg').onclick = e => { e.preventDefault(); juror = null; pickJuror(); };
+    const h = decodeURIComponent(location.hash.slice(1));
+    if (h === 'ranking') return ranking();
+    h ? entry(h) : home();
   }
 
-  fetch('data.json', { cache: 'no-cache' }).then(r => r.json()).then(j => { DATA = j; route(); })
+  async function start() {
+    loadLocal(); route();
+    try {
+      const r = await fetch(`${API}?action=r2state&k=${KEY}&juror=${encodeURIComponent(juror)}`).then(r => r.json());
+      if (r.ok) { const before = JSON.stringify(st.marks); merge(r.state);
+        const local = Object.keys(st.marks).some(id => !r.state.marks[id] || r.state.marks[id].t < st.marks[id].t);
+        if (local) push();
+        if (JSON.stringify(st.marks) !== before && !document.activeElement.matches('input')) route(); }
+    } catch (e) {}
+  }
+
+  fetch('data.json', { cache: 'no-cache' }).then(r => r.json()).then(j => { DATA = j; !KEY ? askCode() : juror ? start() : pickJuror(); })
     .catch(() => { view.innerHTML = '<div class="day"><h1>Could not <em>load.</em></h1><p class="sub">Check your connection and reload.</p></div>'; });
-  window.addEventListener('hashchange', () => { if (document.querySelector('.viewer.open')) P.viewer.close(); route(); });
+  window.addEventListener('hashchange', () => { if (document.querySelector('.viewer.open')) P.viewer.close(); if (juror && KEY) route(); });
 })();
 </script>
 </body>
